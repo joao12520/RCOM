@@ -100,10 +100,8 @@ int main(int argc, char *argv[])
 
     unsigned char A = A_WRITE, C = C_SET, flag = FLAG;
     unsigned char BCC1 = A ^ C;
-    
-    int i = 0;
 
-    unsigned char buf[5] = {flag, A, C, BCC1, flag};
+    unsigned char buf[6] = {flag, A, C, BCC1, flag};
     
     printf("SET: %x\n", *buf);
 
@@ -117,6 +115,21 @@ int main(int argc, char *argv[])
 
     // Wait until all bytes have been written to the serial port
     sleep(1);
+
+    while (STOP == FALSE)
+    {
+        // Returns after 5 chars have been input
+        int r = read(fd, buf, 5);
+        buf[r] = '\0'; // Set end of string to '\0', so we can printf
+
+        
+        for(int i = 0; i < r; i++){
+            printf("%x", buf[i]);
+        }
+        printf("\n");
+
+        STOP = TRUE;
+    }
 
     // Restore the old port settings
     if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
