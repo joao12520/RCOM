@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <termios.h>
 #include <unistd.h>
+#include <signal.h>
 
 // Baudrate settings are defined in <asm/termbits.h>, which is
 // included by <termios.h>
@@ -28,6 +29,24 @@
 #define C_UA 0x07
 
 volatile int STOP = FALSE;
+
+#define FALSE 0
+#define TRUE 1
+
+int alarmEnabled = FALSE;
+int alarmCount = 0;
+
+void alarmHandler(int signal)
+{
+    alarmEnabled = FALSE;
+    alarmCount ++;
+    //send_buf();
+    //read_buf();
+    //if(verify_connection()) alarmCount = 3;
+    
+    printf("Alarm #%d\n", alarmCount);
+    
+}
 
 int main(int argc, char *argv[])
 {
@@ -97,7 +116,20 @@ int main(int argc, char *argv[])
 
     // Create string to send
     //unsigned char buf[BUF_SIZE] = {0};
-
+    
+    // Set alarm function handler
+    (void)signal(SIGALRM, alarmHandler);
+    
+    while (alarmCount < 4) {
+        if (alarmEnabled == FALSE)
+        {
+            alarm(3); // Set alarm to be triggered in 3s
+            alarmEnabled = TRUE;
+        }
+        
+    }
+    
+        
     unsigned char A = A_WRITE, C = C_SET, flag = FLAG;
     unsigned char BCC1 = A ^ C;
 
@@ -112,10 +144,11 @@ int main(int argc, char *argv[])
 
     int bytes = write(fd, buf, BUF_SIZE);
     printf("%d bytes written\n", bytes);
-
+    
     // Wait until all bytes have been written to the serial port
     sleep(1);
 
+    
     while (STOP == FALSE)
     {
         // Returns after 5 chars have been input
@@ -142,3 +175,4 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
