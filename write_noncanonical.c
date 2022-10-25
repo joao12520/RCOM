@@ -11,32 +11,14 @@
 #include <termios.h>
 #include <unistd.h>
 #include <signal.h>
-
-// Baudrate settings are defined in <asm/termbits.h>, which is
-// included by <termios.h>
-#define BAUDRATE B38400
-#define _POSIX_SOURCE 1 // POSIX compliant source
-
-#define FALSE 0
-#define TRUE 1
-
-#define BUF_SIZE 256
-
-#define FLAG 0x7E
-#define A_WRITE 0x03
-#define A_READ 0x01
-#define C_SET 0X03
-#define C_UA 0x07
+#include "macros.h"
 
 volatile int STOP = FALSE;
 
-#define FALSE 0
-#define TRUE 1
+/*int alarmEnabled = FALSE;
+int alarmCount = 0;*/
 
-int alarmEnabled = FALSE;
-int alarmCount = 0;
-
-void alarmHandler(int signal)
+/*void alarmHandler(int signal)
 {
     alarmEnabled = FALSE;
     alarmCount ++;
@@ -46,7 +28,7 @@ void alarmHandler(int signal)
     
     printf("Alarm #%d\n", alarmCount);
     
-}
+}*/
 
 int main(int argc, char *argv[])
 {
@@ -93,7 +75,7 @@ int main(int argc, char *argv[])
     // Set input mode (non-canonical, no echo,...)
     newtio.c_lflag = 0;
     newtio.c_cc[VTIME] = 0; // Inter-character timer unused
-    newtio.c_cc[VMIN] = 5;  // Blocking read until 5 chars received
+    newtio.c_cc[VMIN] = 1;  // Blocking read until 5 chars received
 
     // VTIME e VMIN should be changed in order to protect with a
     // timeout the reception of the following character(s)
@@ -118,7 +100,7 @@ int main(int argc, char *argv[])
     //unsigned char buf[BUF_SIZE] = {0};
     
     // Set alarm function handler
-    (void)signal(SIGALRM, alarmHandler);
+    /*(void)signal(SIGALRM, alarmHandler);
     
     while (alarmCount < 4) {
         if (alarmEnabled == FALSE)
@@ -127,42 +109,56 @@ int main(int argc, char *argv[])
             alarmEnabled = TRUE;
         }
         
-    }
+    }*/
     
         
     unsigned char A = A_WRITE, C = C_SET, flag = FLAG;
     unsigned char BCC1 = A ^ C;
 
-    unsigned char buf[6] = {flag, A, C, BCC1, flag};
+    unsigned char buf[5] = {flag, A, C, BCC1, flag};
     
-    printf("SET: %x\n", *buf);
+    /*printf("\n");
+    printf("FLAG: %x\n", buf[0]);
+    printf("A: %x\n", buf[1]);
+    printf("C: %x\n", buf[2]);
+    printf("BCC: %x\n", buf[3]);
+    printf("FLAG: %x\n", buf[4]);
+    printf("\n");*/
+ 
 
     // In non-canonical mode, '\n' does not end the writing.
     // Test this condition by placing a '\n' in the middle of the buffer.
     // The whole buffer must be sent even with the '\n'.
-    buf[5] = '\n';
+    //buf[5] = '\n';
 
-    int bytes = write(fd, buf, BUF_SIZE);
-    printf("%d bytes written\n", bytes);
+    int btts = write(fd, buf, 5); //envia trama
+    printf("Sent %d bytes\n", btts);
     
     // Wait until all bytes have been written to the serial port
     sleep(1);
 
     
     while (STOP == FALSE)
-    {
+    {	
         // Returns after 5 chars have been input
         int r = read(fd, buf, 5);
-        buf[r] = '\0'; // Set end of string to '\0', so we can printf
+        //buf[r] = '\0'; // Set end of string to '\0', so we can printf
+        
+        printf("\n");
+        printf("Received back %d bytes\n", r);
 
         
-        for(int i = 0; i < r; i++){
+        sleep(1);
+        
+        printf("Received trama: ");
+        for(int i = 0; i < r; i++){ //mostra a trama recebida
             printf("%x", buf[i]);
         }
         printf("\n");
-
+	
         STOP = TRUE;
     }
+
 
     // Restore the old port settings
     if (tcsetattr(fd, TCSANOW, &oldtio) == -1)

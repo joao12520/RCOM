@@ -10,24 +10,17 @@
 #include <sys/stat.h>
 #include <termios.h>
 #include <unistd.h>
-
-// Baudrate settings are defined in <asm/termbits.h>, which is
-// included by <termios.h>
-#define BAUDRATE B38400
-#define _POSIX_SOURCE 1 // POSIX compliant source
-
-#define FALSE 0
-#define TRUE 1
-
-#define BUF_SIZE 256
-
-#define FLAG 0x7E
-#define A_WRITE 0x03
-#define A_READ 0x01
-#define C_SET 0X03
-#define C_UA 0x07
+#include "macros.h"
 
 volatile int STOP = FALSE;
+
+/*void alarmHandler(int signal)
+{
+    alarmEnabled = FALSE;
+    alarmCount++;
+
+    printf("Alarm #%d\n", alarmCount);
+}*/
 
 int main(int argc, char *argv[])
 {
@@ -73,7 +66,7 @@ int main(int argc, char *argv[])
     // Set input mode (non-canonical, no echo,...)
     newtio.c_lflag = 0;
     newtio.c_cc[VTIME] = 0; // Inter-character timer unused
-    newtio.c_cc[VMIN] = 5;  // Blocking read until 5 chars received
+    newtio.c_cc[VMIN] = 1;  // Blocking read until 5 chars received
 
     // VTIME e VMIN should be changed in order to protect with a
     // timeout the reception of the following character(s)
@@ -96,13 +89,44 @@ int main(int argc, char *argv[])
 
     // Loop for input
     unsigned char buf[BUF_SIZE + 1] = {0}; // +1: Save space for the final '\0' char
-
+    
+    //(void)signal(SIGALRM, alarmHandler);
+	
     while (STOP == FALSE)
-    {
+    {	
         // Returns after 5 chars have been input
-        int bytes = read(fd, buf, BUF_SIZE);
-        buf[bytes] = '\0'; // Set end of string to '\0', so we can printf
+        int bytes = read(fd, buf, 5); //lê o que recebeu
+        //buf[bytes] = '\0'; // Set end of string to '\0', so we can printf
+	printf("Received %d bytes\n", bytes);
+        
+        sleep(1); //Wait until all bytes have been written to the serial port
+        
+        printf("Received trama: "); 
+        for(int i = 0; i < bytes; i++){ //mostra o que recebeu
+            printf("%x", buf[i]);
+        }
+        printf("\n");
+        
 
+        
+        printf("\n");
+        int written = write(fd,buf,5); //envia trama de volta
+        printf("Sent back %d bytes\n", written);
+	
+	
+        STOP = TRUE;
+    }
+    
+    /*while (alarmCount < 4)
+    {
+        if (alarmEnabled == FALSE)
+        {
+            alarm(3); // Set alarm to be triggered in 3s
+            
+            // Returns after 5 chars have been input
+        int bytes = read(fd, buf, 5);
+        buf[bytes] = '\0'; // Set end of string to '\0', so we can printf
+	printf("Received %d bytes\n", bytes);
         
         for(int i = 0; i < bytes; i++){
             printf("%x", buf[i]);
@@ -110,10 +134,13 @@ int main(int argc, char *argv[])
         printf("\n");
         
         int written = write(fd,buf,BUF_SIZE);
-        //printf("Received %d/ bytes", written);
-
-        STOP = TRUE;
+        printf("Sent %d bytes\n", written);
+            
+            alarmEnabled = TRUE;
+        }
     }
+
+    printf("Ending program\n");*/
 
     // The while() cycle should be changed in order to respect the specifications
     // of the protocol indicated in the Lab guide
