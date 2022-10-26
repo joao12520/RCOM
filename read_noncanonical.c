@@ -90,14 +90,15 @@ int main(int argc, char *argv[])
     // Loop for input
     unsigned char buf[BUF_SIZE + 1] = {0}; // +1: Save space for the final '\0' char
     
+    
     //(void)signal(SIGALRM, alarmHandler);
 	
     while (STOP == FALSE)
     {	
         // Returns after 5 chars have been input
         int bytes = read(fd, buf, 5); //lê o que recebeu
-        //buf[bytes] = '\0'; // Set end of string to '\0', so we can printf
-	printf("Received %d bytes\n", bytes);
+        buf[bytes] = '\0'; // Set end of string to '\0', so we can printf
+	    printf("Received %d bytes\n", bytes);
         
         sleep(1); //Wait until all bytes have been written to the serial port
         

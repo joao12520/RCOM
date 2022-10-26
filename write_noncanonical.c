@@ -140,9 +140,11 @@ int main(int argc, char *argv[])
     
     while (STOP == FALSE)
     {	
+        unsigned char receive;
+  
         // Returns after 5 chars have been input
-        int r = read(fd, buf, 5);
-        //buf[r] = '\0'; // Set end of string to '\0', so we can printf
+        int r = read(fd, &receive, 5);
+        buf[r] = '\0'; // Set end of string to '\0', so we can printf
         
         printf("\n");
         printf("Received back %d bytes\n", r);
