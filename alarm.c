@@ -19,19 +19,34 @@ void alarmHandler(int signal)
     printf("Alarm #%d\n", alarmCount);
 }
 
+//Start Alarm
+void activateAlarm(){
+    alarm(timeout);
+    alarmEnabled = TRUE;
+}
+
+//End Alarm
+void deactivateAlarm(){
+    alarm(0);
+    alarmEnabled = FALSE;
+    alarmCount = 0;
+}
+
 int main()
 {
     // Set alarm function handler
-    (void)signal(SIGALRM, alarmHandler); //install alarm
+    (void) signal(SIGALRM, alarmHandler); //install alarm
 
-    while (alarmCount < 4)
+    while (alarmCount < 4) //reescrever para comparar com nr de tentativas e se ja mandou ou nao
     {
         if (alarmEnabled == FALSE)
-        {
+        { //deve começar a máquina de estados e ver se falha
             alarm(3); // Set alarm to be triggered in 3s
             alarmEnabled = TRUE;
         }
+        activateAlarm();
     }
+    deactivateAlarm();
 
     printf("Ending program\n");
 
