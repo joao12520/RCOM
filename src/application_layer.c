@@ -58,13 +58,13 @@ void dataPacket(unsigned char *data_packet, int size, unsigned int n, FILE *file
 int compareCPacket(unsigned char *packet, int filesizeHexSize, unsigned char filesizeHex[MAX_PAYLOAD_SIZE], unsigned char receivedFilename[MAX_PAYLOAD_SIZE], unsigned char size){
     if (packet[1] == 0) { 
         if(filesizeHexSize != packet[2]){
-            printf("Start and end are different\n"); //
+            printf("Start and end are different\n"); //tamanho do ficheiro
             return -1;
         }
 
         for(int i = 0; i < filesizeHexSize; i++){
             if(filesizeHex[i] != packet[3+i]){
-                printf("Start and end are different\n");
+                printf("Start and end are different\n"); //tamanho string do ficheiro
                 return -1;
             }
         }
@@ -72,13 +72,13 @@ int compareCPacket(unsigned char *packet, int filesizeHexSize, unsigned char fil
 
     if (packet[3+filesizeHexSize] == 1){ 
         if(size != packet[3+filesizeHexSize+1]){
-            printf("Start and end are different\n");
+            printf("Start and end are different\n"); //tamanho filename
             return -1;
         }
 
         for(int i = 0; i < size; i++){
             if(receivedFilename[i] != packet[3+filesizeHexSize+2+i]){
-                printf("Start and end are different\n");
+                printf("Start and end are different\n"); //filename
                 return -1;
             }
         }
