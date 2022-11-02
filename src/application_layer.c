@@ -136,7 +136,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate, in
 
 
         //iniciar construção do pacote de dados
-        unsigned char data_packet[MAX_PAYLOAD_SIZE] = {0};
+        unsigned char data_packet[MAX_PAYLOAD_SIZE+4] = {0};
         data_packet[0] = 1; //C; valor 1 = dados
         unsigned int n = 0;
         int last_packet = FALSE;
