@@ -180,7 +180,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate, in
         }
 
         printf("\n");
-        printf("File sented\n");
+        printf("File sent\n");
         printf("\n");
     }
 
