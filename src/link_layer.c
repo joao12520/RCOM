@@ -316,7 +316,7 @@ int llopen(LinkLayer connectionParameters) //identificador da ligação de dados
             int bytes = read(fd, &value, 1); //lê
 
             if(bytes == -1){
-                perror("Failed to read1");
+                perror("Failed to read");
                 return -1;
             }
 
@@ -507,7 +507,7 @@ int llread(unsigned char *packet) //comprimento do array (número de caracteres 
             continue;
         }
         if(bytes == -1){
-            perror("Failed to read2");
+            perror("Failed to read");
             return -1;
         }
 
@@ -692,7 +692,7 @@ int llclose(int showStatistics) //valor positivo em caso de sucesso e negativo e
             int bytes = read(fd, &value, 1);
 
             if(bytes == -1){
-                perror("Failed to read3\n");
+                perror("Failed to read\n");
                 return -1;
             }
             current_state = state_machine(current_state, &finished, value, A_READ, C_DISC);
@@ -719,7 +719,7 @@ int llclose(int showStatistics) //valor positivo em caso de sucesso e negativo e
             int bytes = read(fd, &value, 1);
 
             if(bytes == -1){
-                perror("Failed to read4\n");
+                perror("Failed to read\n");
                 return -1;
             }
             current_state = state_machine(current_state, &finished, value, A_READ, C_UA);
