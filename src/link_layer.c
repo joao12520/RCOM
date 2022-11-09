@@ -313,7 +313,7 @@ int llopen(LinkLayer connectionParameters) //identificador da ligação de dados
             }
 
             unsigned char value;
-            int bytes = read(fd, &value, 1); //escreve
+            int bytes = read(fd, &value, 1); //lê
 
             if(bytes == -1){
                 perror("Failed to read1");
