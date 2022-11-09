@@ -56,29 +56,29 @@ void dataPacket(unsigned char *data_packet, int size, unsigned int n, FILE *file
 }
 
 int compareCPacket(unsigned char *packet, int filesizeHexSize, unsigned char filesizeHex[MAX_PAYLOAD_SIZE], unsigned char receivedFilename[MAX_PAYLOAD_SIZE], unsigned char size){
-    if (packet[1] == 0) { 
+    if (packet[1] == 0) { // tipo do parâmetro->file_size_bytes (em string)
         if(filesizeHexSize != packet[2]){
-            printf("Start and end are different\n"); //tamanho do ficheiro
+            printf("Start and end are different\n"); //
             return -1;
         }
 
         for(int i = 0; i < filesizeHexSize; i++){
             if(filesizeHex[i] != packet[3+i]){
-                printf("Start and end are different\n"); //tamanho string do ficheiro
+                printf("Start and end are different\n");
                 return -1;
             }
         }
     }
 
-    if (packet[3+filesizeHexSize] == 1){ 
+    if (packet[3+filesizeHexSize] == 1){ // tipo do parâmetro->filename
         if(size != packet[3+filesizeHexSize+1]){
-            printf("Start and end are different\n"); //tamanho filename
+            printf("Start and end are different\n");
             return -1;
         }
 
         for(int i = 0; i < size; i++){
             if(receivedFilename[i] != packet[3+filesizeHexSize+2+i]){
-                printf("Start and end are different\n"); //filename
+                printf("Start and end are different\n");
                 return -1;
             }
         }
@@ -123,7 +123,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate, in
 
         unsigned int size = strlen(filename); //length
 
-        unsigned int CPacket_size = 3 + filesizeHexSize + 2 + size; 
+        unsigned int CPacket_size = 3 + filesizeHexSize + 2 + size; // 3->C1 T1 L1; 2->T2 L2; length(V1) = file_size_bytes; length(V2) = size
 
         unsigned char CPacket[CPacket_size];
 
