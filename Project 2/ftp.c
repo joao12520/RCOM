@@ -6,36 +6,47 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 int parseUrl(char** parsed, char* url) {
-    char *user = "anonymus", *password = "", *host = "", *urlPath = "/";
-
-    char *token = strtok(url, ":");
-    if (strcmp(token,"ftp")==0 || token == NULL) {          //check if it is ftp
-        if (strchr(token, '@') == NULL) {                   //no credentials
-            token++;token++;
-            host = strtok(NULL, "/");
-            if ((urlPath = strtok(NULL, "\0")) == NULL) {   //no path
-                urlPath = "/";
-            }
-        } else {                                            //credentials
-            user = strtok(NULL, ":");
-            user++;user++;
-            password = strtok(NULL, "@");
-            host = strtok(NULL, "/");
-            if ((urlPath = strtok(NULL, "\0")) == NULL) {   //no path
-                urlPath = "/";
-            }
-        }
+    char *user = NULL, *password = NULL, *host = NULL, *path = NULL;
+    if (strstr(url,"ftp://") != NULL) {             //no ftp
+        if (strstr(url,"ftp://") != url) {          //ftp in the wrong position
+            return -1;
+        } else {                                    //ftp
+            url += 6;                               //user:password@host/path
+        }  
+    }
+    
+    if ((path = strchr(url, '/')) != NULL) {        //has path
+        path++;
+        url = strtok(url, "/");                     //user:password@host
     } else {
-        host = url;
+        path = "";
     }
 
+    if ((host = strchr(url, '@')) != NULL) {        //has credentials
+        host++;
+        url = strtok(url, "@");                     //user:password
+        
+        if ((password = strchr(url, ':')) != NULL) {//has password
+            password++;
+            user = strtok(url, ":");                //user
+        } else {
+            return 1;                               //credentials but only one field
+        }
+    } else {
+        user = "anonymous";
+        password = "";
+        host = url;
+    }
+    
+    
     parsed[0] = user;
     parsed[1] = password;
     parsed[2] = host;
-    parsed[3] = urlPath;
-
+    parsed[3] = path;
+    
     return 0;
 }
 
@@ -68,7 +79,7 @@ int main(int argc, char *argv[]) {
 
     #define h_addr h_addr_list[0]	The first address in h_addr_list.
 */
-    if ((h = gethostbyname(argv[1])) == NULL) {
+    if ((h = gethostbyname(parsed[2])) == NULL) {
         herror("gethostbyname()");
         exit(-1);
     }
@@ -83,7 +94,7 @@ int main(int argc, char *argv[]) {
     /*server address handling*/
     bzero((char *) &server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(h->h_addr);    /*32 bit Internet address network byte ordered*/
+    server_addr.sin_addr.s_addr = inet_addr(inet_ntoa(*((struct in_addr *) h->h_addr)));    /*32 bit Internet address network byte ordered*/
     server_addr.sin_port = htons(21);        /*server TCP port must be network byte ordered */
 
     /*open a TCP socket*/
@@ -101,10 +112,10 @@ int main(int argc, char *argv[]) {
     
     //login
     FILE *file = fdopen(sockfd, "r");
-    char *line;
+    char *line = malloc(256);
     size_t size;
     int code;
-    char* login = "";
+    //char login[256];
     while (code != 230){
         if (getline(&line, &size, file) != -1) {
             printf("%s\n", line);
@@ -112,18 +123,26 @@ int main(int argc, char *argv[]) {
         }
         
         if (code == 220) {                          // expecting username
-            sprintf(login, "user %s\n", parsed[0]);
-            write(sockfd, login, strlen(login));
+            char user[] = "user ";
+            strcat(user, parsed[0]);
+            strcat(user, "\n");
+            //sprintf(login, "user %s\n", parsed[0]);
+            write(sockfd, user, strlen(user));
         } else if (code == 331) {                   // expecting password
-            sprintf(login, "pass %s\n", parsed[1]);
-            write(sockfd, login, strlen(login));
+            char pass[] = "pass ";
+            strcat(pass, parsed[1]);
+            strcat(pass, "\n");
+            //sprintf(login, "pass %s\n", parsed[1]);
+            write(sockfd, pass, strlen(pass));
         } else if (code == 230) {                   // login succsessful
-            sprintf(login, "pasv\n");
-            write(sockfd, login, strlen(login));    // entering passive mode
+            char pasv[] = "pasv\n";
+            //sprintf(login, "pasv\n");
+            write(sockfd, pasv, strlen(pasv));    // entering passive mode
         } else {
             fprintf(stderr, "Error logging in\n");
             exit(-1);
         }
+        //printf("%s\n", login);
     }
 
     //download
@@ -135,18 +154,20 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    char* adr = "";
-    char* copy = "";
-    strcpy(copy, line);
-    char* token = strtok(copy, "(");
+    char adr[] = "";
+    char* token = strtok(line, "(");
     token = strtok(NULL, ",");
     strcat(adr, token);
+    strcat(adr, ".");
     token = strtok(NULL, ",");
     strcat(adr, token);
+    strcat(adr, ".");
     token = strtok(NULL, ",");
     strcat(adr, token);
+    strcat(adr, ".");
     token = strtok(NULL, ",");
     strcat(adr, token);
+    printf("%s\n",adr);
 
     int port = 0;
     token = strtok(NULL, ",");
@@ -173,11 +194,13 @@ int main(int argc, char *argv[]) {
         perror("connect()");
         exit(-1);
     }
+    printf("%d\n", fdReq);
 
-    char *retr = "retr ";
+    char retr[] = "retr ";
     strcat(retr, parsed[3]);
     strcat(retr, "\n");
     write(sockfd, retr, strlen(retr));
+    printf("%s\n", retr);
     if (getline(&line, &size, file) != -1) {
         printf("%s\n", line);
         code = atoi(line);
@@ -186,21 +209,23 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Error connecting\n");
             exit(-1);
     }
-
-    char *filename = "";
-    char *copyPath = "";
-    strcpy(copyPath, parsed[3]);
-    token = strtok(copyPath, "/");
-    while (token != NULL) {
-        strcpy(filename, copyPath);
-        token = strtok(NULL, "/");
+    
+    char *filename; 
+    if ((filename = strrchr(parsed[3], '/')) == NULL) {
+        filename = parsed[3];
+    } else {
+        filename++;
     }
+    
+    printf("%s\n",filename);
 
     int fdRec = open(filename, O_RDWR | O_CREAT);
-    char *buf = "";
+    printf("%d\n",fdRec);
+    char buf[1024];
     int bytes;
-    while ((bytes = read(fdReq, buf, sizeof(buf)))) {
+    while ((bytes = read(fdReq, buf, sizeof(buf))) > 0) {
         write(fdRec, buf, bytes);
+        printf("%s%d\n", buf, bytes);
     }
 
     if (getline(&line, &size, file) != -1) {
